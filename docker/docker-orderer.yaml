@@ -4,7 +4,7 @@ networks:
     external:
       name: study-network
 services:
-  orderer0.example.com:
+  orderer.example.com:
     deploy:
       replicas: 1
       restart_policy:
@@ -13,11 +13,11 @@ services:
         max_attempts: 3
       placement:
         constraints:
-          - node.hostname: orderer0.example.com
+          - node.hostname: orderer.example.com
     image: hyperledger/fabric-orderer:$IMAGE_TAG
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: orderer
-    hostname: orderer0.example.com
+    hostname: orderer.example.com
     environment:
       - FABRIC_LOGGING_SPEC=INFO
       - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
@@ -40,10 +40,10 @@ services:
       - 7050:7050
     volumes:
         - ./system-genesis-block/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
-        - ./organizations/ordererOrganizations/example.com/orderers/orderer0.example.com/msp:/var/hyperledger/orderer/msp
-        - ./organizations/ordererOrganizations/example.com/orderers/orderer0.example.com/tls/:/var/hyperledger/orderer/tls
-        - orderer0.example.com:/var/hyperledger/production/orderer
+        - ./organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
+        - ./organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/:/var/hyperledger/orderer/tls
+        - orderer.example.com:/var/hyperledger/production/orderer
     networks:
       study-network:
         aliases:
-          - orderer0.example.com
+          - orderer.example.com

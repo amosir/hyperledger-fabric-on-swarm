@@ -14,62 +14,62 @@ VERBOSE="$4"
 : ${VERBOSE:="false"}
 
 if [ ! -d "channel-artifacts" ]; then
-	mkdir channel-artifacts
+    mkdir channel-artifacts
 fi
 
 createChannelTx() {
-	set -x
-	configtxgen -profile TwoOrgsChannel -outputCreateChannelTx ./channel-artifacts/${CHANNEL_NAME}.tx -channelID $CHANNEL_NAME
-	res=$?
-	{ set +x; } 2>/dev/null
-	verifyResult $res "Failed to generate channel configuration transaction..."
+    set -x
+    configtxgen -profile TwoOrgsChannel -outputCreateChannelTx ./channel-artifacts/${CHANNEL_NAME}.tx -channelID $CHANNEL_NAME
+    res=$?
+    { set +x; } 2>/dev/null
+    verifyResult $res "Failed to generate channel configuration transaction..."
 }
 
 createChannel() {
-	setGlobals 1 0
-	# Poll in case the raft leader is not set yet
-	local rc=1
-	local COUNTER=1
-	while [ $rc -ne 0 -a $COUNTER -lt $MAX_RETRY ]; do
-		sleep $DELAY
-		set -x
-		peer channel create -o "$ORDERER_NAME":7050 -c $CHANNEL_NAME --ordererTLSHostnameOverride orderer0.example.com -f ./channel-artifacts/${CHANNEL_NAME}.tx --outputBlock $BLOCKFILE --tls --cafile $ORDERER_CA >&log.txt
-		res=$?
-		{ set +x; } 2>/dev/null
-		let rc=$res
-		COUNTER=$(expr $COUNTER + 1)
-	done
-	cat log.txt
-	verifyResult $res "Channel creation failed"
+    setGlobals 1 0
+    # Poll in case the raft leader is not set yet
+    local rc=1
+    local COUNTER=1
+    while [ $rc -ne 0 -a $COUNTER -lt $MAX_RETRY ]; do
+        sleep $DELAY
+        set -x
+        peer channel create -o "$ORDERER_NAME":7050 -c $CHANNEL_NAME --ordererTLSHostnameOverride orderer.example.com -f ./channel-artifacts/${CHANNEL_NAME}.tx --outputBlock $BLOCKFILE --tls --cafile $ORDERER_CA >&log.txt
+        res=$?
+        { set +x; } 2>/dev/null
+        let rc=$res
+        COUNTER=$(expr $COUNTER + 1)
+    done
+    cat log.txt
+    verifyResult $res "Channel creation failed"
 }
 
 # joinChannel ORG
 # TODO: 需要设置每个peer节点，目前只设置了peer0
 #
 joinChannel() {
-	FABRIC_CFG_PATH=${PWD}/config/
-	ORG=$1
-	PEER=$2
-	setGlobals $ORG $PEER
-	local rc=1
-	local COUNTER=1
-	## Sometimes Join takes time, hence retry
-	while [ $rc -ne 0 -a $COUNTER -lt $MAX_RETRY ]; do
-		sleep $DELAY
-		set -x
-		peer channel join -b $BLOCKFILE >&log.txt
-		res=$?
-		{ set +x; } 2>/dev/null
-		let rc=$res
-		COUNTER=$(expr $COUNTER + 1)
-	done
-	cat log.txt
-	verifyResult $res "After $MAX_RETRY attempts, peer0.org${ORG} has failed to join channel '$CHANNEL_NAME' "
+    FABRIC_CFG_PATH=${PWD}/config/
+    ORG=$1
+    PEER=$2
+    setGlobals $ORG $PEER
+    local rc=1
+    local COUNTER=1
+    ## Sometimes Join takes time, hence retry
+    while [ $rc -ne 0 -a $COUNTER -lt $MAX_RETRY ]; do
+        sleep $DELAY
+        set -x
+        peer channel join -b $BLOCKFILE >&log.txt
+        res=$?
+        { set +x; } 2>/dev/null
+        let rc=$res
+        COUNTER=$(expr $COUNTER + 1)
+    done
+    cat log.txt
+    verifyResult $res "After $MAX_RETRY attempts, peer0.org${ORG} has failed to join channel '$CHANNEL_NAME' "
 }
 
 setAnchorPeer() {
-	ORG=$1
-	docker exec cli ./scripts/setAnchorPeer.sh $ORG $CHANNEL_NAME
+    ORG=$1
+    docker exec cli ./scripts/setAnchorPeer.sh $ORG $CHANNEL_NAME
 }
 
 FABRIC_CFG_PATH=${PWD}/configtx

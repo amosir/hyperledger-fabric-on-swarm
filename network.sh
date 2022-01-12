@@ -7,25 +7,13 @@ source .env
 # peer each, and a single node Raft ordering service. Users can also use this
 # script to create a channel deploy a chaincode on the channel
 #
-# prepending $PWD/../bin to PATH to ensure we are picking up the correct binaries
+# prepending $PWD/./bin to PATH to ensure we are picking up the correct binaries
 # this may be commented out to resolve installed version of tools if desired
 export PATH=${PWD}/bin:$PATH
 export FABRIC_CFG_PATH=${PWD}/configtx
 export VERBOSE=false
 
 . scripts/utils.sh
-
-# Obtain CONTAINER_IDS and remove them
-# TODO Might want to make this optional - could clear other containers
-# This function is called when you bring a network down
-function clearContainers() {
-    CONTAINER_IDS=$(docker ps -a | awk '($2 ~ /dev-peer.*/) {print $1}')
-    if [ -z "$CONTAINER_IDS" -o "$CONTAINER_IDS" == " " ]; then
-        infoln "No containers available for deletion"
-    else
-        docker rm -f $CONTAINER_IDS
-    fi
-}
 
 # Delete any images that were generated as a part of this setup
 # specifically the following images are often left behind:
@@ -49,7 +37,7 @@ function checkPrereqs() {
     ## Check if your have cloned the peer binaries and configuration files.
     peer version >/dev/null 2>&1
 
-    if [[ $? -ne 0 || ! -d "../config" ]]; then
+    if [[ $? -ne 0 || ! -d "./config" ]]; then
         errorln "Peer binary and configuration files not found.."
         errorln
         errorln "Follow the instructions in the Fabric docs to install the Fabric Binaries:"
@@ -108,8 +96,10 @@ function checkPrereqs() {
 
 # Create Organization crypto material using cryptogen or CAs
 function createOrgs() {
+    # 存在就不重复创建证书了
     if [ -d "organizations/peerOrganizations" ]; then
-        rm -Rf organizations/peerOrganizations && rm -Rf organizations/ordererOrganizations
+        # rm -Rf organizations/peerOrganizations && rm -Rf organizations/ordererOrganizations
+        return
     fi
 
     # Create crypto material using cryptogen
@@ -211,14 +201,24 @@ function networkUp() {
     # generate artifacts if they don't exist
     if [ ! -d "organizations/peerOrganizations" ]; then
         createOrgs
+        . rsync.sh
         createConsortium
     fi
 
-    COMPOSE_FILES="-f ${COMPOSE_FILE_BASE}"
+    infoln "部署orderer服务"
 
-    IMAGE_TAG=$IMAGETAG docker-compose ${COMPOSE_FILES} up -d 2>&1
+    IMAGE_TAG=$IMAGETAG docker stack deploy -c $COMPOSE_FILE_ORDERER orderer 2>&1
+    sleep 5
 
-    docker ps -a
+    infoln "部署org1服务"
+    IMAGE_TAG=$IMAGETAG docker stack deploy -c $COMPOSE_FILE_ORG1 org1 2>&1
+    sleep 3
+
+    infoln "部署org2服务"
+    IMAGE_TAG=$IMAGETAG docker stack deploy -c $COMPOSE_FILE_ORG2 org2 2>&1
+    sleep 3
+
+    docker stack ls
     if [ $? -ne 0 ]; then
         fatalln "Unable to start network"
     fi
@@ -252,15 +252,23 @@ function deployCC() {
 
 # Tear down running network
 function networkDown() {
-    # stop org3 containers also in addition to org1 and org2, in case we were running sample to add org3
-    docker-compose -f $COMPOSE_FILE_BASE down --volumes --remove-orphans
+
+    infoln "卸载orderer服务"
+    docker stack rm orderer
+
+    infoln "卸载org1服务"
+    docker stack rm org1
+
+    infoln "卸载org2服务"
+    docker stack rm org2
+
     # Don't remove the generated artifacts -- note, the ledgers are always removed
     if [ "$MODE" != "restart" ]; then
         # Bring down the network, deleting the volumes
         #Cleanup the chaincode containers
-        clearContainers
         #Cleanup images
         removeUnwantedImages
+        # 暂时先不删除这些文件
         # remove orderer block and other channel configuration transactions and certs
         docker run --rm -v $(pwd):/data busybox sh -c 'cd /data && rm -rf system-genesis-block/*.block organizations/peerOrganizations organizations/ordererOrganizations'
         # remove channel and script artifacts
@@ -290,7 +298,10 @@ CC_COLL_CONFIG="NA"
 # chaincode init function defaults to "NA"
 CC_INIT_FCN="NA"
 # use this as the default docker-compose yaml definition
-COMPOSE_FILE_BASE=docker/docker-compose-test-net.yaml
+COMPOSE_FILE_ORG1=docker/docker-org1.yaml
+COMPOSE_FILE_ORG2=docker/docker-org2.yaml
+COMPOSE_FILE_ORDERER=docker/docker-orderer.yaml
+
 #
 # chaincode language defaults to "NA"
 CC_SRC_LANGUAGE="NA"

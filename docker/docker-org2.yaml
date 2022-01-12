@@ -1,13 +1,16 @@
 version: "3.3"
+volumes:
+  peer0.org2.example.com:
+  peer1.org2.example.com:
 networks:
-  study-network: true
+  study-network:
     external:
       name: study-network
 services:
-  peer0.org2.example.com:
+  peer0_org2:
     deploy:
       replicas: 1
-      restart_policy: 
+      restart_policy:
         condition: on-failure
         delay: 5s
         max_attempts: 3
@@ -16,7 +19,7 @@ services:
           - node.hostname == peer0.org2.example.com
     image: hyperledger/fabric-peer:$IMAGE_TAG
     hostname: peer0.org2.example.com
-    environment: 
+    environment:
       #Generic peer variables
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       # the following setting starts chaincode containers on the same
@@ -42,23 +45,23 @@ services:
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
     volumes:
       - /var/run/docker.sock:/host/var/run/docker.sock
-      - ./organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/fabric/msp
-      - ./organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls:/etc/hyperledger/fabric/tls
+      - ../organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/fabric/msp
+      - ../organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls:/etc/hyperledger/fabric/tls
       - peer0.org2.example.com:/var/hyperledger/production
-      working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
-      command: peer node start
-      ports:
-        - 7051:7051
-        - 7053:7053
-      networks:
-        study-network:
-          aliases:
-            - peer0.org2.example.com
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start
+    ports:
+      - 9051:7051
+      - 9053:7053
+    networks:
+      study-network:
+        aliases:
+          - peer0.org2.example.com
 
-  peer1.org2.example.com:
+  peer1_org2:
     deploy:
       replicas: 1
-      restart_policy: 
+      restart_policy:
         condition: on-failure
         delay: 5s
         max_attempts: 3
@@ -67,7 +70,7 @@ services:
           - node.hostname == peer1.org2.example.com
     image: hyperledger/fabric-peer:$IMAGE_TAG
     hostname: peer1.org2.example.com
-    environment: 
+    environment:
       #Generic peer variables
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       # the following setting starts chaincode containers on the same
@@ -93,15 +96,15 @@ services:
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
     volumes:
       - /var/run/docker.sock:/host/var/run/docker.sock
-      - ./organizations/peerOrganizations/org2.example.com/peers/peer1.org2.example.com/msp:/etc/hyperledger/fabric/msp
-      - ./organizations/peerOrganizations/org2.example.com/peers/peer1.org2.example.com/tls:/etc/hyperledger/fabric/tls
+      - ../organizations/peerOrganizations/org2.example.com/peers/peer1.org2.example.com/msp:/etc/hyperledger/fabric/msp
+      - ../organizations/peerOrganizations/org2.example.com/peers/peer1.org2.example.com/tls:/etc/hyperledger/fabric/tls
       - peer1.org2.example.com:/var/hyperledger/production
-      working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
-      command: peer node start
-      ports:
-        - 7051:7051
-        - 7053:7053
-      networks:
-        study-network:
-          aliases:
-            - peer1.org2.example.com
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start
+    ports:
+      - 10051:7051
+      - 10053:7053
+    networks:
+      study-network:
+        aliases:
+          - peer1.org2.example.com

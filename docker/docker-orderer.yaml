@@ -1,10 +1,12 @@
-version: '3.3'
+version: "3.3"
+volumes:
+  orderer.example.com:
 networks:
-  study-network: true
+  study-network:
     external:
       name: study-network
 services:
-  orderer.example.com:
+  orderer:
     deploy:
       replicas: 1
       restart_policy:
@@ -13,7 +15,7 @@ services:
         max_attempts: 3
       placement:
         constraints:
-          - node.hostname: orderer.example.com
+          - node.hostname == orderer.example.com
     image: hyperledger/fabric-orderer:$IMAGE_TAG
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: orderer
@@ -35,14 +37,14 @@ services:
       - ORDERER_KAFKA_VERBOSE=true
       - ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
       - ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY=/var/hyperledger/orderer/tls/server.key
-      - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]      
+      - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
     ports:
       - 7050:7050
     volumes:
-        - ./system-genesis-block/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
-        - ./organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
-        - ./organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/:/var/hyperledger/orderer/tls
-        - orderer.example.com:/var/hyperledger/production/orderer
+      - ../system-genesis-block/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+      - ../organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
+      - ../organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/:/var/hyperledger/orderer/tls
+      - orderer.example.com:/var/hyperledger/production/orderer
     networks:
       study-network:
         aliases:

@@ -19,6 +19,7 @@ fi
 
 createChannelTx() {
     set -x
+    echo "+++++++++++++${FABRIC_CFG_PATH}"
     configtxgen -profile TwoOrgsChannel -outputCreateChannelTx ./channel-artifacts/${CHANNEL_NAME}.tx -channelID $CHANNEL_NAME
     res=$?
     { set +x; } 2>/dev/null

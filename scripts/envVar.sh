@@ -17,6 +17,8 @@ export PEER1_ORG1_CA=${PWD}/organizations/peerOrganizations/org1.example.com/pee
 export PEER0_ORG2_CA=${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
 export PEER1_ORG2_CA=${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer1.org2.example.com/tls/ca.crt
 
+source .env
+
 # Set environment variables for the peer org
 setGlobals() {
     local USING_ORG=""

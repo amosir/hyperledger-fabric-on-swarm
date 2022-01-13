@@ -106,8 +106,8 @@ installChaincode() {
     res=$?
     { set +x; } 2>/dev/null
     cat log.txt
-    verifyResult $res "Chaincode installation on peer0.org${ORG} has failed"
-    successln "Chaincode is installed on peer0.org${ORG}"
+    verifyResult $res "Chaincode installation on peer${PEER}.org${ORG} has failed"
+    successln "Chaincode is installed on peer${PEER}.org${ORG}"
 }
 
 # queryInstalled PEER ORG
@@ -121,22 +121,21 @@ queryInstalled() {
     { set +x; } 2>/dev/null
     cat log.txt
     PACKAGE_ID=$(sed -n "/${CC_NAME}_${CC_VERSION}/{s/^Package ID: //; s/, Label:.*$//; p;}" log.txt)
-    verifyResult $res "Query installed on peer0.org${ORG} has failed"
-    successln "Query installed successful on peer0.org${ORG} on channel"
+    verifyResult $res "Query installed on peer${PEER}.org${ORG} has failed"
+    successln "Query installed successful on peer${PEER}.org${ORG} on channel"
 }
 
 # approveForMyOrg VERSION PEER ORG
 approveForMyOrg() {
     ORG=$1
-    PEER=$2
-    setGlobals $ORG $PEER
+    setGlobals $ORG 0
     set -x
     peer lifecycle chaincode approveformyorg -o "$ORDERER_NAME":7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile $ORDERER_CA --channelID $CHANNEL_NAME --name ${CC_NAME} --version ${CC_VERSION} --package-id ${PACKAGE_ID} --sequence ${CC_SEQUENCE} ${INIT_REQUIRED} ${CC_END_POLICY} ${CC_COLL_CONFIG} >&log.txt
     res=$?
     { set +x; } 2>/dev/null
     cat log.txt
-    verifyResult $res "Chaincode definition approved on ${PEER}.org${ORG} on channel '$CHANNEL_NAME' failed"
-    successln "Chaincode definition approved on ${PEER}.org${ORG} on channel '$CHANNEL_NAME'"
+    verifyResult $res "Chaincode definition approved on peer0.org${ORG} on channel '$CHANNEL_NAME' failed"
+    successln "Chaincode definition approved on peer0.org${ORG} on channel '$CHANNEL_NAME'"
 }
 
 # checkCommitReadiness VERSION PEER ORG
@@ -165,9 +164,9 @@ checkCommitReadiness() {
     done
     cat log.txt
     if test $rc -eq 0; then
-        infoln "Checking the commit readiness of the chaincode definition successful on ${PEER}.org${ORG} on channel '$CHANNEL_NAME'"
+        infoln "Checking the commit readiness of the chaincode definition successful on peer${PEER}.org${ORG} on channel '$CHANNEL_NAME'"
     else
-        fatalln "After $MAX_RETRY attempts, Check commit readiness result on ${PEER}.org${ORG} is INVALID!"
+        fatalln "After $MAX_RETRY attempts, Check commit readiness result on peer${PEER}.org${ORG} is INVALID!"
     fi
 }
 
@@ -185,7 +184,7 @@ commitChaincodeDefinition() {
     res=$?
     { set +x; } 2>/dev/null
     cat log.txt
-    verifyResult $res "Chaincode definition commit failed on peer0.org${ORG} on channel '$CHANNEL_NAME' failed"
+    verifyResult $res "Chaincode definition commit failed on ${PEER}.org${ORG} on channel '$CHANNEL_NAME' failed"
     successln "Chaincode definition committed on channel '$CHANNEL_NAME'"
 }
 
@@ -202,7 +201,7 @@ queryCommitted() {
     # we either get a successful response, or reach MAX RETRY
     while [ $rc -ne 0 -a $COUNTER -lt $MAX_RETRY ]; do
         sleep $DELAY
-        infoln "Attempting to Query committed status on ${PEER}.org${ORG}, Retry after $DELAY seconds."
+        infoln "Attempting to Query committed status on peer${PEER}.org${ORG}, Retry after $DELAY seconds."
         set -x
         peer lifecycle chaincode querycommitted --channelID $CHANNEL_NAME --name ${CC_NAME} >&log.txt
         res=$?
@@ -213,9 +212,9 @@ queryCommitted() {
     done
     cat log.txt
     if test $rc -eq 0; then
-        successln "Query chaincode definition successful on ${PEER}.org${ORG} on channel '$CHANNEL_NAME'"
+        successln "Query chaincode definition successful on peer${PEER}.org${ORG} on channel '$CHANNEL_NAME'"
     else
-        fatalln "After $MAX_RETRY attempts, Query chaincode definition result on ${PEER}.org${ORG} is INVALID!"
+        fatalln "After $MAX_RETRY attempts, Query chaincode definition result on peer${PEER}.org${ORG} is INVALID!"
     fi
 }
 
@@ -240,7 +239,7 @@ chaincodeInvokeInit() {
 
 chaincodeQuery() {
     ORG=$1
-    setGlobals $ORG
+    setGlobals $ORG 0
     infoln "Querying on peer0.org${ORG} on channel '$CHANNEL_NAME'..."
     local rc=1
     local COUNTER=1
@@ -282,13 +281,17 @@ queryInstalled 1 0
 queryInstalled 1 1
 
 ## peer0.org1审批链码定义
-approveForMyOrg 1 0
-## peer1.org1审批链码定义
-approveForMyOrg 1 1
-## peer0.org2审批链码定义
-approveForMyOrg 2 0
-## peer1.org2审批链码定义
-approveForMyOrg 2 1
+# approveForMyOrg 1 0
+# ## peer1.org1审批链码定义
+# approveForMyOrg 1 1
+# ## peer0.org2审批链码定义
+# approveForMyOrg 2 0
+# ## peer1.org2审批链码定义
+# approveForMyOrg 2 1
+
+approveForMyOrg 1
+
+approveForMyOrg 2
 
 ## check whether the chaincode definition is ready to be committed
 ## expect them both to have approved
@@ -317,5 +320,8 @@ if [ "$CC_INIT_FCN" = "NA" ]; then
 else
     chaincodeInvokeInit 1 0 1 1 2 0 2 1
 fi
+
+# 查询账本状态
+chaincodeQuery 1
 
 exit 0

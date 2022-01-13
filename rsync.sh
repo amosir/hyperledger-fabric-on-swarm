@@ -1,9 +1,8 @@
 #!/bin/bash
-base_ip="10.245.150."
-for i in {86..92}; do
-    host="${base_ip}${i}"
+hosts=('peer0.org1.example.com' 'peer1.org1.example.com' 'peer0.org2.example.com' 'peer1.org2.example.com' 'orderer.example.com' 'client0.example.com' 'client1.example.com')
+for host in ${hosts[@]}; do
     if [ "$host" != "$HOSTNAME" ]; then
         echo "transfer to ${host}"
-        rsync -vrlu --delete --exclude '.git' --exclude '.vscode' --exclude '.gitignore' ./ root@${host}:/root/hyperledger-fabric-on-swarm
+        rsync -vrlu --exclude '.git' --exclude '.vscode' --exclude '.gitignore' ./ root@${host}:/root/hyperledger-fabric-on-swarm/
     fi
 done

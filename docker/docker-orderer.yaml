@@ -49,3 +49,31 @@ services:
       study-network:
         aliases:
           - orderer.example.com
+  cli:
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      placement:
+        constraints:
+          - node.hostname == orderer.example.com # 将cli部署在orderer节点上
+    image: hyperledger/fabric-tools:$IMAGE_TAG
+    tty: true
+    hostname: cli
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: /bin/bash
+    volumes:
+      - /var/run/:/host/var/run/
+      - ../organizations:/opt/gopath/src/github.com/hyperledger/fabric/peer/organizations
+      - ../scripts:/opt/gopath/src/github.com/hyperledger/fabric/peer/scripts/
+    depends_on:
+      - peer0_org1
+      - peer0_org2
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - FABRIC_LOGGING_SPEC=INFO
+    networks:
+      - study-network

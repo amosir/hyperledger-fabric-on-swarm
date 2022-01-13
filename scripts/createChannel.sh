@@ -70,7 +70,8 @@ joinChannel() {
 
 setAnchorPeer() {
     ORG=$1
-    docker exec cli ./scripts/setAnchorPeer.sh $ORG $CHANNEL_NAME
+    # TODO: 这里-f指定过滤name为fabric_svc_cli的service的容器，后期需要配置成环境变量
+    docker exec $(docker ps -q -f name=fabric_svc_cli) ./scripts/setAnchorPeer.sh $ORG $CHANNEL_NAME
 }
 
 FABRIC_CFG_PATH=${PWD}/configtx

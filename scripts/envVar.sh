@@ -40,7 +40,7 @@ setGlobals() {
             export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
         else
             export CORE_PEER_TLS_ROOTCERT_FILE=$PEER1_ORG1_CA
-            export CORE_PEER_ADDRESS=peer1.org1.example.com:7051
+            export CORE_PEER_ADDRESS=peer1.org1.example.com:8051
         fi
 
     elif [ $USING_ORG -eq 2 ]; then
@@ -49,10 +49,10 @@ setGlobals() {
         infoln "Using peer ${USING_PEER}"
         if [ $USING_PEER -eq 0 ]; then
             export CORE_PEER_TLS_ROOTCERT_FILE=$PEER0_ORG2_CA
-            export CORE_PEER_ADDRESS=peer0.org2.example.com:7051
+            export CORE_PEER_ADDRESS=peer0.org2.example.com:9051
         else
             export CORE_PEER_TLS_ROOTCERT_FILE=$PEER1_ORG2_CA
-            export CORE_PEER_ADDRESS=peer1.org2.example.com:7051
+            export CORE_PEER_ADDRESS=peer1.org2.example.com:10051
         fi
     else
         errorln "ORG Unknown"

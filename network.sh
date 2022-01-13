@@ -98,8 +98,7 @@ function checkPrereqs() {
 function createOrgs() {
     # 存在就不重复创建证书了
     if [ -d "organizations/peerOrganizations" ]; then
-        # rm -Rf organizations/peerOrganizations && rm -Rf organizations/ordererOrganizations
-        return
+        rm -Rf organizations/peerOrganizations && rm -Rf organizations/ordererOrganizations
     fi
 
     # Create crypto material using cryptogen
@@ -189,6 +188,17 @@ function createConsortium() {
     fi
 }
 
+# 生成证书并分发到其他节点
+function generateCrypto() {
+    checkPrereqs
+    # generate artifacts if they don't exist
+    if [ ! -d "organizations/peerOrganizations" ]; then
+        createOrgs
+        sleep 5
+        . rsync.sh
+    fi
+}
+
 # After we create the org crypto material and the system channel genesis block,
 # we can now bring up the peers and ordering service. By default, the base
 # file for creating the network is "docker-compose-test-net.yaml" in the ``docker``
@@ -196,29 +206,19 @@ function createConsortium() {
 # point the crypto material and genesis block that were created in earlier.
 
 # Bring up the peer and orderer nodes using docker compose.
-function networkUp() {
+# 部署docker集群
+function deployDocker() {
     checkPrereqs
-    # generate artifacts if they don't exist
-    if [ ! -d "organizations/peerOrganizations" ]; then
-        createOrgs
-        . rsync.sh
-        createConsortium
-    fi
+
+    createConsortium
 
     infoln "部署orderer服务"
 
-    IMAGE_TAG=$IMAGETAG docker stack deploy -c $COMPOSE_FILE_ORDERER orderer 2>&1
+    IMAGE_TAG=$IMAGETAG docker stack deploy -c $COMPOSE_FILE_ORDERER -c $COMPOSE_FILE_ORG1 -c $COMPOSE_FILE_ORG2 fabric_svc 2>&1
     sleep 5
 
-    infoln "部署org1服务"
-    IMAGE_TAG=$IMAGETAG docker stack deploy -c $COMPOSE_FILE_ORG1 org1 2>&1
-    sleep 3
+    docker service ls
 
-    infoln "部署org2服务"
-    IMAGE_TAG=$IMAGETAG docker stack deploy -c $COMPOSE_FILE_ORG2 org2 2>&1
-    sleep 3
-
-    docker stack ls
     if [ $? -ne 0 ]; then
         fatalln "Unable to start network"
     fi
@@ -231,7 +231,8 @@ function createChannel() {
 
     if [ ! -d "organizations/peerOrganizations" ]; then
         infoln "Bringing up network"
-        networkUp
+        generateCrypto
+        deployDocker
     fi
 
     # now run the script that creates a channel. This script uses configtxgen once
@@ -253,14 +254,8 @@ function deployCC() {
 # Tear down running network
 function networkDown() {
 
-    infoln "卸载orderer服务"
-    docker stack rm orderer
-
-    infoln "卸载org1服务"
-    docker stack rm org1
-
-    infoln "卸载org2服务"
-    docker stack rm org2
+    infoln "卸载fabric服务"
+    docker stack rm fabric_svc
 
     # Don't remove the generated artifacts -- note, the ledgers are always removed
     if [ "$MODE" != "restart" ]; then
@@ -270,7 +265,12 @@ function networkDown() {
         removeUnwantedImages
         # 暂时先不删除这些文件
         # remove orderer block and other channel configuration transactions and certs
-        docker run --rm -v $(pwd):/data busybox sh -c 'cd /data && rm -rf system-genesis-block/*.block organizations/peerOrganizations organizations/ordererOrganizations'
+        docker run --rm -v $(pwd):/data busybox sh -c 'cd /data && rm -rf system-genesis-block/*.block'
+
+        # 清除证书
+        # TODO: 暂时不清除
+        # docker run --rm -v $(pwd):/data busybox sh -c 'cd /data && rm -rf organizations/peerOrganizations organizations/ordererOrganizations'
+
         # remove channel and script artifacts
         docker run --rm -v $(pwd):/data busybox sh -c 'cd /data && rm -rf channel-artifacts log.txt *.tar.gz'
     fi
@@ -310,7 +310,7 @@ CC_VERSION="1.0"
 # Chaincode definition sequence
 CC_SEQUENCE=1
 # default image tag
-IMAGETAG="latest"
+IMAGETAG="2.2.0"
 # default ca image tag
 CA_IMAGETAG="latest"
 # default database
@@ -415,7 +415,7 @@ while [[ $# -ge 1 ]]; do
 done
 
 # Determine mode of operation and printing out what we asked for
-if [ "$MODE" == "up" ]; then
+if [ "$MODE" == "deployDocker" ]; then
     infoln "Starting nodes with CLI timeout of '${MAX_RETRY}' tries and CLI delay of '${CLI_DELAY}' seconds and using database '${DATABASE}'"
 elif [ "$MODE" == "createChannel" ]; then
     infoln "Creating channel '${CHANNEL_NAME}'."
@@ -426,13 +426,18 @@ elif [ "$MODE" == "restart" ]; then
     infoln "Restarting network"
 elif [ "$MODE" == "deployCC" ]; then
     infoln "deploying chaincode on channel '${CHANNEL_NAME}'"
+# TODO: 添加创建证书的命令
+elif [ "$MODE" == "generateCrypto" ]; then
+    infoln "创建证书并分发"
 else
     printHelp
     exit 1
 fi
 
-if [ "${MODE}" == "up" ]; then
-    networkUp
+if [ "${MODE}" == "deployDocker" ]; then
+    deployDocker
+elif [ "$MODE" == "generateCrypto" ]; then
+    generateCrypto
 elif [ "${MODE}" == "createChannel" ]; then
     createChannel
 elif [ "${MODE}" == "deployCC" ]; then

@@ -125,7 +125,7 @@ git clone git@github.com:Tiansir-wg/hyperledger-fabric-on-swarm.git
 在 orderer 节点上运行以下命令
 
 ```shell
-./network.sh deployDocker
+./network.sh createChannel
 ```
 
 ### 8.部署链码

@@ -1,10 +1,12 @@
-version: '3.3'
+version: "3.3"
+volumes:
+  orderer.example.com:
 networks:
-  study-network: true
+  study-network:
     external:
       name: study-network
 services:
-  orderer.example.com:
+  orderer:
     deploy:
       replicas: 1
       restart_policy:
@@ -13,7 +15,7 @@ services:
         max_attempts: 3
       placement:
         constraints:
-          - node.hostname: orderer.example.com
+          - node.hostname == 10_245_150_90
     image: hyperledger/fabric-orderer:$IMAGE_TAG
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: orderer
@@ -35,15 +37,43 @@ services:
       - ORDERER_KAFKA_VERBOSE=true
       - ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
       - ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY=/var/hyperledger/orderer/tls/server.key
-      - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]      
+      - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
     ports:
       - 7050:7050
     volumes:
-        - ./system-genesis-block/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
-        - ./organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
-        - ./organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/:/var/hyperledger/orderer/tls
-        - orderer.example.com:/var/hyperledger/production/orderer
+      - ../system-genesis-block/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+      - ../organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
+      - ../organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/:/var/hyperledger/orderer/tls
+      - orderer.example.com:/var/hyperledger/production/orderer
     networks:
       study-network:
         aliases:
           - orderer.example.com
+  cli:
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      placement:
+        constraints:
+          - node.hostname == 10_245_150_84 # 将cli部署在master节点上
+    image: hyperledger/fabric-tools:$IMAGE_TAG
+    tty: true
+    hostname: cli
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: /bin/bash
+    volumes:
+      - /var/run/:/host/var/run/
+      - ../organizations:/opt/gopath/src/github.com/hyperledger/fabric/peer/organizations
+      - ../scripts:/opt/gopath/src/github.com/hyperledger/fabric/peer/scripts/
+    depends_on:
+      - peer0_org1
+      - peer0_org2
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - FABRIC_LOGGING_SPEC=INFO
+    networks:
+      - study-network

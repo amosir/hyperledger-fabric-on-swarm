@@ -1,0 +1,2 @@
+Committed chaincode definition for chaincode 'basic' on channel 'mychannel':
+Version: 1.0, Sequence: 1, Endorsement Plugin: escc, Validation Plugin: vscc, Approvals: [Org1MSP: true, Org2MSP: true]

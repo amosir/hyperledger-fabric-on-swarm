@@ -1,6 +1,8 @@
 #!/bin/bash
-base_ip="10.245.150."
-for i in {86..92}; do
-    host="${base_ip}${i}"
-    rsync -vrlu ./ root@${host}:/root/hyperledger-fabric-on-swarm
+hosts=('10_245_150_86' '10_245_150_87' '10_245_150_88' '10_245_150_89' '10_245_150_90')
+for host in ${hosts[@]}; do
+    if [ "$host" != "$HOSTNAME" ]; then
+        echo "transfer to ${host}"
+        rsync -vrlu --exclude '.git' --exclude '.vscode' --exclude '.gitignore' --exclude './bin' ./ root@${host}:/root/hyperledger-fabric-on-swarm/
+    fi
 done

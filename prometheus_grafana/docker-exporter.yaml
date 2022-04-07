@@ -1,0 +1,21 @@
+version: "3.3"
+networks:
+  study-network:
+    external:
+      name: study-network
+services:
+  exporter:
+    deploy:
+      replicas: 5
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      placement:
+        constraints:
+          - node.role == worker
+    image: prom/node-exporter:latest
+    ports:
+      - 9100:9100
+    networks:
+      - study-network

@@ -1,0 +1,33 @@
+version: "3.7"
+networks:
+  study-network:
+    external:
+      name: study-network
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    # network_mode: "host"
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - "./prometheus.yml:/etc/prometheus/prometheus.yml"
+      - "./prometheus_data:/prometheus"
+    networks:
+      - study-network
+    extra_hosts:
+      - "orderer.example.com:10.245.150.90"
+      - "peer0.org1.example.com:10.245.150.86"
+      - "peer1.org1.example.com:10.245.150.87"
+      - "peer0.org2.example.com:10.245.150.88"
+      - "peer1.org2.example.com:10.245.150.89"
+  grafana:
+    image: grafana/grafana
+    # network_mode: "host"
+    ports:
+      - "3000:3000"
+    restart: always
+    volumes:
+      - "./grafana_data:/var/lib/grafana"
+    networks:
+      - study-network

@@ -52,20 +52,19 @@
 
 ## 网络结构
 
-1. 集群中一共七个节点，包括一个 swarm master 节点和六个 swarm slave 节点
+1. 集群中一共六个节点，包括一个 swarm master 节点和五个 swarm slave 节点
 2. 包括两个组织，每个组织各两个 peer 节点，一个 orderer 节点(以 raft 方式运行)和两个客户端节点
 3. orderer 运行在 swarm master 节点上
 4. 虚拟机资源分配情况如下:
 
 | 集群角色     | 域名                   | 虚拟机地址    | 配置                  |
 | ------------ | ---------------------- | ------------- | --------------------- |
-| swarm slave  | peer0.org1.example.com | 10.245.150.86 | 1 核、2G RAM、50G HDD |
-| swarm slave  | peer1.org1.example.com | 10.245.150.87 | 1 核、2G RAM、50G HDD |
-| swarm slave  | peer0.org2.example.com | 10.245.150.88 | 1 核、2G RAM、50G HDD |
-| swarm slave  | peer1.org2.example.com | 10.245.150.89 | 1 核、2G RAM、50G HDD |
-| swarm master | orderer0.example.com   | 10.245.150.90 | 4 核、8G RAM、50G HDD |
-| swarm slave  | client0.example.com    | 10.245.150.91 | 1 核、2G RAM、50G HDD |
-| swarm slave  | client1.example.com    | 10.245.150.92 | 1 核、2G RAM、50G HDD |
+| swarm slave  | 10_245_150_86 | 10.245.150.86 | 1 核、2G RAM、50G HDD |
+| swarm slave  | 10_245_150_87 | 10.245.150.87 | 1 核、2G RAM、50G HDD |
+| swarm slave  | 10_245_150_88 | 10.245.150.88 | 1 核、2G RAM、50G HDD |
+| swarm slave  | 10_245_150_89 | 10.245.150.89 | 1 核、2G RAM、50G HDD |
+| swarm slave  | 10_245_150_90 | 10.245.150.90 | 4 核、8G RAM、50G HDD |
+| swarm master  |  10_245_150_84   | 10.245.150.84 | 1 核、2G RAM、50G HDD |
 
 ## 使用过程
 
@@ -76,10 +75,12 @@
 设置域名，例如:
 
 ```shell
-hostnamectl set-hostname peer0.org2.example.com
+hostnamectl set-hostname 10_245_150_84
 ```
 
 添加 host 设置，将上述表格中所有的域名及其 IP 地址对应上
+
+由于后续需要将84上执行生成的文件拷贝到其他文件，因此需要配置免密登录。通过在机器84上执行copy_id.sh脚本即可实现
 
 ### 2.安装软件环境
 
@@ -133,5 +134,13 @@ git clone git@github.com:Tiansir-wg/hyperledger-fabric-on-swarm.git
 在 orderer 节点上运行以下命令
 
 ```shell
-./network.sh deployCC
+./network.sh deployCC -ccn basic -ccp ./applications/asset-transfer-basic/chaincode-go -ccl go
 ```
+
+### 9.运行应用程序
+进入到applications/asset-transfer-basic/application-go目录，执行go run assetTransfer.go，即可执行应用程序
+
+### 10.销毁网络
+在84上执行./network.sh down即可销毁hyperledger fabric相关的服务，关闭并清理相关容器
+
+当然为了不对下次运行造成影响，还需要在每个节点上执行./clear_volumes.sh脚本，将产生的数据一并清除

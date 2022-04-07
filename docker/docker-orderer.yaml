@@ -38,6 +38,8 @@ services:
       - ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
       - ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY=/var/hyperledger/orderer/tls/server.key
       - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      # - ORDERER_METRICS_PROVIDER=prometheus
+      # - ORDERER_OPERATIONS_LISTENADDRESS=0.0.0.0:8443
     ports:
       - 7050:7050
     volumes:

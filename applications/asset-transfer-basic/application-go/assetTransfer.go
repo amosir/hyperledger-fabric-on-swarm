@@ -20,7 +20,7 @@ import (
 func main() {
 	log.Println("============ application-golang starts ============")
 
-	err := os.Setenv("DISCOVERY_AS_LOCALHOST", "true")
+	err := os.Setenv("DISCOVERY_AS_LOCALHOST", "false")
 	if err != nil {
 		log.Fatalf("Error setting DISCOVERY_AS_LOCALHOST environemnt variable: %v", err)
 	}
@@ -40,7 +40,7 @@ func main() {
 	ccpPath := filepath.Join(
 		"..",
 		"..",
-		"test-network",
+		"..",
 		"organizations",
 		"peerOrganizations",
 		"org1.example.com",
@@ -118,7 +118,7 @@ func populateWallet(wallet *gateway.Wallet) error {
 	credPath := filepath.Join(
 		"..",
 		"..",
-		"test-network",
+		"..",
 		"organizations",
 		"peerOrganizations",
 		"org1.example.com",
@@ -127,7 +127,7 @@ func populateWallet(wallet *gateway.Wallet) error {
 		"msp",
 	)
 
-	certPath := filepath.Join(credPath, "signcerts", "cert.pem")
+	certPath := filepath.Join(credPath, "signcerts", "User1@org1.example.com-cert.pem")
 	// read the certificate pem
 	cert, err := ioutil.ReadFile(filepath.Clean(certPath))
 	if err != nil {

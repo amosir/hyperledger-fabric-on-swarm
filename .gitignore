@@ -1,2 +1,7 @@
 .vscode/
 bin/*
+prometheus_grafana/grafana_data
+prometheus_grafana/prometheus_data
+system-genesis-block/genesis.block
+basic.tar.gz
+

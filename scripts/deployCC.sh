@@ -321,4 +321,7 @@ else
     chaincodeInvokeInit 1 0 1 1 2 0 2 1
 fi
 
+# 查询账本状态
+chaincodeQuery 1
+
 exit 0
